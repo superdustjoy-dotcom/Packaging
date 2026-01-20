@@ -8,13 +8,11 @@
         body { font-family: "PingFang TC", "Microsoft JhengHei", sans-serif; background: var(--bg); margin: 0; padding: 20px; color: #333; }
         .container { max-width: 1000px; margin: 0 auto; }
         
-        /* 智慧搜尋區 */
         .search-section { background: white; padding: 30px; border-radius: 15px; box-shadow: 0 4px 15px rgba(0,0,0,0.1); margin-bottom: 20px; text-align: center; }
         .search-title { font-size: 24px; margin-bottom: 15px; color: var(--primary); font-weight: bold; }
         .search-bar { width: 80%; padding: 15px 25px; font-size: 18px; border: 2px solid #ddd; border-radius: 30px; outline: none; transition: 0.3s; }
         .search-bar:focus { border-color: var(--accent); box-shadow: 0 0 10px rgba(39, 174, 96, 0.2); }
 
-        /* 結果呈現區 */
         .result-info { display: grid; grid-template-columns: repeat(auto-fill, minmax(450px, 1fr)); gap: 20px; }
         .info-card { background: white; border-left: 8px solid var(--accent); padding: 20px; border-radius: 8px; box-shadow: 0 2px 8px rgba(0,0,0,0.05); animation: fadeIn 0.3s ease; }
         @keyframes fadeIn { from { opacity: 0; transform: translateY(10px); } to { opacity: 1; transform: translateY(0); } }
@@ -23,89 +21,65 @@
         .info-grid { display: grid; grid-template-columns: 80px 1fr; gap: 8px; font-size: 14px; }
         .info-label { color: #7f8c8d; font-weight: bold; }
         .info-value { color: #2c3e50; }
-        .info-tag { background: #e8f6f3; color: #27ae60; padding: 2px 6px; border-radius: 4px; font-size: 12px; }
-
-        .note-box { 
-            background: #fffdf0; 
-            border: 1px dashed #f1c40f; 
-            padding: 10px; 
-            margin-top: 10px; 
-            color: #d35400; 
-            white-space: pre-wrap; 
-            font-size: 13px; 
-            line-height: 1.6;
-            border-radius: 4px;
-        }
+        
+        .note-box { background: #fffdf0; border: 1px dashed #f1c40f; padding: 10px; margin-top: 10px; color: #d35400; white-space: pre-wrap; font-size: 13px; border-radius: 4px; }
 
         .btn-group { margin-top: 15px; text-align: right; }
-        .btn { padding: 5px 15px; border-radius: 4px; cursor: pointer; border: 1px solid #ddd; background: #fff; }
-        .btn-edit { background: #f1c40f; border: none; color: #fff; font-size: 12px; }
-        .btn-add-global { background: var(--primary); color: white; padding: 10px 20px; border-radius: 25px; border: none; cursor: pointer; margin-top: 10px; }
-
-        /* 編輯彈窗 */
-        .modal { display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.6); z-index: 1000; }
-        .modal-content { background: white; width: 450px; margin: 50px auto; padding: 25px; border-radius: 10px; }
-        .form-group { margin-bottom: 12px; }
-        .form-group label { display: block; margin-bottom: 4px; font-weight: bold; font-size: 13px; }
-        .form-group input, .form-group textarea { width: 100%; padding: 8px; box-sizing: border-box; border: 1px solid #ddd; border-radius: 4px; }
+        .btn { padding: 5px 15px; border-radius: 4px; cursor: pointer; border: 1px solid #ddd; background: #fff; font-size: 12px; }
+        .btn-reset { background: #e74c3c; color: white; border: none; }
+        .btn-edit { background: #f1c40f; color: white; border: none; }
+        .btn-add { background: var(--primary); color: white; padding: 10px 20px; border-radius: 25px; border: none; margin-top: 10px; cursor: pointer; }
     </style>
 </head>
 <body>
 
 <div class="container">
+    <div style="text-align: right; margin-bottom: 10px;">
+        <button class="btn btn-reset" onclick="forceReset()">🔄 清除舊紀錄 (讀取本地代碼資料)</button>
+    </div>
+
     <div class="search-section">
         <div class="search-title">📦 包裝物料廠商智慧查詢系統</div>
-        <input type="text" id="mainSearch" class="search-bar" placeholder="在此搜尋「力維」或「地球」..." oninput="handleSearch()">
+        <input type="text" id="mainSearch" class="search-bar" placeholder="打入「力維」或「地球」或料件編號..." oninput="handleSearch()">
         <br>
-        <button class="btn-add-global" onclick="openEdit()">+ 新增物料與廠商</button>
+        <button class="btn-add" onclick="openEdit()">+ 新增一筆資料</button>
     </div>
 
     <div id="resultCount" style="margin-bottom: 10px; color: #666; font-size: 14px;"></div>
     <div id="resultsArea" class="result-info"></div>
 </div>
 
-<div id="editModal" class="modal">
-    <div class="modal-content">
+<div id="editModal" style="display:none; position:fixed; top:0; left:0; width:100%; height:100%; background:rgba(0,0,0,0.6); z-index:1000;">
+    <div style="background:white; width:450px; margin:50px auto; padding:25px; border-radius:10px;">
         <h3 id="modalTitle">資料維護</h3>
         <input type="hidden" id="editIndex">
-        <div class="form-group"><label>廠商名稱</label><input type="text" id="f_vendor"></div>
-        <div class="form-group"><label>電話</label><input type="text" id="f_phone"></div>
-        <div class="form-group"><label>物品名稱</label><input type="text" id="f_item"></div>
-        <div class="form-group"><label>統編</label><input type="text" id="f_taxid"></div>
-        <div class="form-group"><label>類別編號</label><input type="text" id="f_cat"></div>
-        <div class="form-group"><label>備註詳情 (在此加入料件編號)</label><textarea id="f_note" rows="8"></textarea></div>
-        <div style="text-align: right; margin-top: 20px;">
+        <div style="margin-bottom:12px;"><label style="display:block; font-weight:bold;">廠商名稱</label><input type="text" id="f_vendor" style="width:100%; padding:8px; border:1px solid #ddd;"></div>
+        <div style="margin-bottom:12px;"><label style="display:block; font-weight:bold;">電話</label><input type="text" id="f_phone" style="width:100%; padding:8px; border:1px solid #ddd;"></div>
+        <div style="margin-bottom:12px;"><label style="display:block; font-weight:bold;">物品名稱</label><input type="text" id="f_item" style="width:100%; padding:8px; border:1px solid #ddd;"></div>
+        <div style="margin-bottom:12px;"><label style="display:block; font-weight:bold;">統編</label><input type="text" id="f_taxid" style="width:100%; padding:8px; border:1px solid #ddd;"></div>
+        <div style="margin-bottom:12px;"><label style="display:block; font-weight:bold;">備註詳情</label><textarea id="f_note" rows="8" style="width:100%; padding:8px; border:1px solid #ddd;"></textarea></div>
+        <div style="text-align:right; margin-top:20px;">
             <button class="btn" onclick="closeModal()">取消</button>
-            <button class="btn btn-edit" onclick="saveData()" style="padding: 8px 20px">確認儲存</button>
+            <button class="btn btn-edit" onclick="saveData()">確認儲存</button>
         </div>
     </div>
 </div>
 
 <script>
+    // --- 這裡是你編輯資料的地方 (本地編輯區) ---
     const initialData = [
         {
-            vendor:"力維", phone:"04-22984101", taxid:"22478490", cat:"", 
-            item:"(LINX5900)油墨、添加劑", 
+            vendor:"力維", phone:"04-22984101", taxid:"22478490", item:"(LINX5900)油墨、添加劑", 
             note:"墨水1130 添加劑1575 1530(800) 清(1300)\n\n料件編號：MISC-A075-00\n品名：噴墨機(5900)年度保養\n\n料件編號：MISC-A29E-00\n品名：5900噴墨機添加劑"
         },
         {
-            vendor:"地球綜合", phone:"04-25667552", taxid:"07147916", cat:"", 
-            item:"OPP透明膠帶、氣泡布、牛皮貼紙", 
+            vendor:"地球綜合", phone:"04-25667552", taxid:"07147916", item:"OPP透明膠帶、氣泡布、牛皮貼紙", 
             note:"料件編號：MISC-A280-00\n品名：OPP機用膠帶(48*900M)\n\n料件編號：MISC-A280-00\n品名：OPP膠帶(48*90Y)"
         },
-        {vendor:"永嘉盛", phone:"23127982", item:"MISC-A280-00,MISC-A285-00(氣泡布)", taxid:"16066029", cat:"MISC-A285-00", note:""},
-        {vendor:"馬肯依瑪士", phone:"", item:"油墨MB247-4、添加劑A188-4", taxid:"89283852", cat:"MISC-A075-00", note:"保養合約"},
-        {vendor:"信越化學工業株式會社", phone:"", item:"切刀用矽膠、Shin-Etsu(KS-64)", taxid:"", cat:"", note:""},
-        {vendor:"凱士士", phone:"", item:"鎖式紮帶CV-200/A本色", taxid:"72108944", cat:"MISC-A284-00", note:""},
-        {vendor:"台灣希悅爾", phone:"03-3242988", item:"鐵氟龍膠帶(0.13mm*50mm*10m)", taxid:"23060459", cat:"MISC-A290-00", note:""},
-        {vendor:"荗翔", phone:"", item:"塑膠袋(0.07*550*830)", taxid:"16414738", cat:"MISC-A286-00", note:""},
-        {vendor:"桂和", phone:"25331127-8", item:"pp盒", taxid:"55988058", cat:"", note:""},
-        {vendor:"德昱成", phone:"02-22999176", item:"碳帶、印字機", taxid:"27637291", cat:"MISC-A280-00", note:""},
-        {vendor:"松優", phone:"25273865", item:"機器維修", taxid:"86220432", cat:"MISC-A030-00", note:""},
-        {vendor:"東信", phone:"", item:"乾燥劑", taxid:"56667701", cat:"", note:""},
-        {vendor:"立捷立", phone:"0933580178", item:"收縮膜", taxid:"84419129", cat:"", note:""},
-        {vendor:"大堡", phone:"", item:"三聯單", taxid:"14053225", cat:"MISC-A038-01", note:""},
-        {vendor:"世源科技", phone:"06-2425580", item:"開盒機吸盤XP-F40N", taxid:"86575095", cat:"MISC-A070-00", note:""}
+        {vendor:"永嘉盛", phone:"23127982", item:"MISC-A280-00,MISC-A285-00(氣泡布)", taxid:"16066029", note:""},
+        {vendor:"馬肯依瑪士", phone:"", item:"油墨MB247-4", taxid:"89283852", note:"保養合約"},
+        {vendor:"凱士士", phone:"", item:"鎖式紮帶CV-200/A", taxid:"72108944", note:""}
+        // ... 其他資料可依此格式自行增加
     ];
 
     let db = JSON.parse(localStorage.getItem('smartPackageDB')) || initialData;
@@ -113,33 +87,21 @@
     function handleSearch() {
         const query = document.getElementById('mainSearch').value.toLowerCase();
         const resultsArea = document.getElementById('resultsArea');
-        const countArea = document.getElementById('resultCount');
-        
-        if (!query) {
-            resultsArea.innerHTML = '<p style="text-align:center; color:#999; width:100%">請輸入廠商關鍵字...</p>';
-            countArea.innerText = "";
-            return;
-        }
+        if (!query) { resultsArea.innerHTML = '<p style="text-align:center; color:#999; width:100%">請輸入關鍵字...</p>'; return; }
 
         const filtered = db.filter(d => 
-            d.vendor.toLowerCase().includes(query) || 
-            d.item.toLowerCase().includes(query) ||
-            d.note.toLowerCase().includes(query)
+            d.vendor.toLowerCase().includes(query) || d.item.toLowerCase().includes(query) || d.note.toLowerCase().includes(query)
         );
 
-        countArea.innerText = `找到 ${filtered.length} 筆資料：`;
         resultsArea.innerHTML = filtered.map(d => `
             <div class="info-card">
                 <div class="card-header">${highlight(d.vendor, query)}</div>
                 <div class="info-grid">
                     <div class="info-label">電話：</div><div class="info-value">${d.phone || '無'}</div>
-                    <div class="info-label">統編：</div><div class="info-value">${d.taxid || '無'}</div>
                     <div class="info-label">主要物品：</div><div class="info-value"><strong>${highlight(d.item, query)}</strong></div>
                 </div>
-                <div class="note-box">【備註與料件明細】\n${highlight(d.note, query) || '尚無詳細備註'}</div>
-                <div class="btn-group">
-                    <button class="btn btn-edit" onclick="openEdit(${db.indexOf(d)})">編輯資料</button>
-                </div>
+                <div class="note-box">${highlight(d.note, query) || '無備註'}</div>
+                <div class="btn-group"><button class="btn btn-edit" onclick="openEdit(${db.indexOf(d)})">編輯</button></div>
             </div>
         `).join('');
     }
@@ -150,23 +112,27 @@
         return text.replace(re, '<mark style="background:#ffeb3b; padding:0 2px">$1</mark>');
     }
 
-    function openEdit(index = null) {
-        const modal = document.getElementById('editModal');
-        document.getElementById('editIndex').value = index;
-        document.getElementById('modalTitle').innerText = index !== null ? '編輯資訊' : '新增資訊';
+    // --- 強制清除記憶並讀取代碼的功能 ---
+    function forceReset() {
+        if(confirm("確定要清除網頁舊紀錄嗎？\n這會讓網頁重新讀取你寫在 .html 檔案裡的 initialData。")) {
+            localStorage.removeItem('smartPackageDB');
+            location.reload();
+        }
+    }
 
+    function openEdit(index = null) {
+        document.getElementById('editIndex').value = index;
         if (index !== null) {
             const d = db[index];
             document.getElementById('f_vendor').value = d.vendor;
             document.getElementById('f_phone').value = d.phone;
             document.getElementById('f_item').value = d.item;
             document.getElementById('f_taxid').value = d.taxid;
-            document.getElementById('f_cat').value = d.cat;
             document.getElementById('f_note').value = d.note;
         } else {
-            document.querySelectorAll('.modal-content input, textarea').forEach(i => i.value = '');
+            document.querySelectorAll('#editModal input, textarea').forEach(i => i.value = '');
         }
-        modal.style.display = 'block';
+        document.getElementById('editModal').style.display = 'block';
     }
 
     function saveData() {
@@ -176,13 +142,10 @@
             phone: document.getElementById('f_phone').value,
             item: document.getElementById('f_item').value,
             taxid: document.getElementById('f_taxid').value,
-            cat: document.getElementById('f_cat').value,
             note: document.getElementById('f_note').value
         };
-
         if (index !== "") db[index] = newData;
         else db.push(newData);
-
         localStorage.setItem('smartPackageDB', JSON.stringify(db));
         closeModal();
         handleSearch();
