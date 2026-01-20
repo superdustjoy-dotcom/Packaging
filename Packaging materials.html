@@ -2,12 +2,12 @@
 <html lang="zh-TW">
 <head>
     <meta charset="UTF-8">
-    <title>包裝物料廠商智慧系統 - 青棠終極版</title>
+    <title>包裝物料智慧系統 - 青棠精簡同步版</title>
     <style>
-        :root { --primary: #34495e; --accent: #27ae60; --bg: #f0f2f5; --blue: #3498db; --red: #e74c3c; }
+        :root { --primary: #34495e; --accent: #27ae60; --bg: #f0f2f5; --orange: #e67e22; --blue: #3498db; }
         body { font-family: "PingFang TC", "Microsoft JhengHei", sans-serif; background: var(--bg); margin: 0; padding: 20px; padding-top: 80px; color: #333; }
         
-        /* 固定在最上方的工具列 */
+        /* 頂部固定導覽列 */
         .top-nav { 
             position: fixed; top: 0; left: 0; width: 100%; 
             background: #fff; border-bottom: 2px solid #ddd; 
@@ -16,14 +16,12 @@
         }
 
         .container { max-width: 1000px; margin: 0 auto; }
-        
         .btn { padding: 10px 20px; border-radius: 6px; cursor: pointer; border: none; font-size: 14px; font-weight: bold; transition: 0.3s; }
-        .btn-export { background: var(--blue); color: white; }
-        .btn-export:hover { background: #2980b9; box-shadow: 0 4px 10px rgba(52, 152, 219, 0.3); }
-        .btn-reset { background: #eee; color: #666; }
+        .btn-link { background: var(--orange); color: white; }
+        .btn-save { background: var(--blue); color: white; }
+        .btn-add { background: var(--primary); color: white; padding: 12px 25px; border-radius: 30px; margin-top: 10px; }
 
         .search-section { background: white; padding: 30px; border-radius: 15px; box-shadow: 0 4px 15px rgba(0,0,0,0.1); margin-bottom: 20px; text-align: center; }
-        .search-title { font-size: 24px; margin-bottom: 15px; color: var(--primary); font-weight: bold; }
         .search-bar { width: 90%; padding: 15px 25px; font-size: 18px; border: 2px solid #ddd; border-radius: 30px; outline: none; }
         .search-bar:focus { border-color: var(--accent); }
 
@@ -35,9 +33,7 @@
         .info-label { color: #7f8c8d; font-weight: bold; }
         .note-box { background: #fffdf0; border: 1px dashed #f1c40f; padding: 12px; margin-top: 10px; color: #d35400; white-space: pre-wrap; font-size: 13px; border-radius: 4px; line-height: 1.6; }
 
-        .btn-group { margin-top: 15px; text-align: right; }
-        .btn-edit { background: #f1c40f; color: white; border: none; }
-
+        /* 彈窗 */
         .modal { display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.6); z-index: 3000; }
         .modal-content { background: white; width: 450px; margin: 50px auto; padding: 25px; border-radius: 10px; }
         input, textarea { width: 100%; padding: 10px; margin-bottom: 15px; border: 1px solid #ddd; border-radius: 4px; box-sizing: border-box; }
@@ -46,19 +42,18 @@
 <body>
 
 <div class="top-nav">
-    <button class="btn btn-reset" onclick="forceReset()">🔄 清除舊記憶</button>
-    <div style="font-weight: bold; color: #7f8c8d;">青棠資料同步系統</div>
-    <button class="btn btn-export" onclick="exportUpdatedFile()">💾 匯出最新系統檔 (.html)</button>
+    <button class="btn btn-link" onclick="linkLocalFile()">🔗 1. 連結我的本地檔案</button>
+    <div id="fileStatus" style="font-size: 13px; color: #e67e22; font-weight: bold;">← 請先授權連結檔案以啟用儲存</div>
+    <button class="btn btn-save" id="saveBtn" onclick="saveBackToFile()" style="display:none;">💾 2. 直接儲存更新回本地</button>
 </div>
 
 <div class="container">
     <div class="search-section">
-        <div class="search-title">📦 包裝物料智慧查詢系統</div>
+        <h2 style="color:var(--primary); margin-top:0;">📦 包裝物料智慧查詢系統</h2>
         <input type="text" id="mainSearch" class="search-bar" placeholder="打入「力維」、「地球」或編號..." oninput="handleSearch()">
         <br><br>
-        <button class="btn btn-export" style="background:var(--primary)" onclick="openEdit()">+ 新增一筆資料</button>
+        <button class="btn btn-add" onclick="openEdit()">+ 新增物料與廠商資料</button>
     </div>
-
     <div id="resultsArea" class="result-info"></div>
 </div>
 
@@ -70,16 +65,16 @@
         <label>電話</label><input type="text" id="f_phone">
         <label>物品名稱</label><input type="text" id="f_item">
         <label>統編</label><input type="text" id="f_taxid">
-        <label>備註詳情</label><textarea id="f_note" rows="8"></textarea>
+        <label>備註詳情 (料件編號/細節)</label><textarea id="f_note" rows="8"></textarea>
         <div style="text-align:right;">
-            <button class="btn" onclick="closeModal()">取消</button>
-            <button class="btn btn-export" onclick="saveData()">儲存更改</button>
+            <button class="btn" style="background:#ddd" onclick="closeModal()">取消</button>
+            <button class="btn btn-save" onclick="saveData()">確認修改</button>
         </div>
     </div>
 </div>
 
 <script id="data-script">
-    // 【主資料區】
+    // --- 初始資料庫 ---
     const initialData = [
         {
             vendor:"力維", phone:"04-22984101", taxid:"22478490", item:"(LINX5900)油墨、添加劑", 
@@ -93,26 +88,55 @@
     ];
 
     let db = JSON.parse(localStorage.getItem('smartPackageDB')) || initialData;
+    let fileHandle = null;
 
+    // --- ✨ 直接存取本地檔案功能 ---
+    async function linkLocalFile() {
+        try {
+            [fileHandle] = await window.showOpenFilePicker({
+                types: [{ description: 'HTML Files', accept: { 'text/html': ['.html'] } }],
+                multiple: false
+            });
+            document.getElementById('fileStatus').innerText = "✅ 已成功連結：" + fileHandle.name;
+            document.getElementById('fileStatus').style.color = "#27ae60";
+            document.getElementById('saveBtn').style.display = "block";
+        } catch (err) { console.log("取消連結"); }
+    }
+
+    async function saveBackToFile() {
+        if (!fileHandle) return alert("請先點擊左上角連結檔案");
+        try {
+            const status = await fileHandle.queryPermission({ mode: 'readwrite' });
+            if (status !== 'granted') await fileHandle.requestPermission({ mode: 'readwrite' });
+
+            let htmlContent = document.documentElement.outerHTML;
+            const latestDataJson = JSON.stringify(db, null, 4);
+            const regex = /const initialData = \[\s*[\s\S]*? \];/;
+            const replacement = `const initialData = ${latestDataJson};`;
+            const newHtml = htmlContent.replace(regex, replacement);
+
+            const writable = await fileHandle.createWritable();
+            await writable.write(newHtml);
+            await writable.close();
+            alert("💾 檔案已直接更新！下次開啟此檔案即為最新資料。");
+        } catch (err) { alert("儲存失敗：" + err.message); }
+    }
+
+    // --- 核心邏輯 ---
     function handleSearch() {
         const query = document.getElementById('mainSearch').value.toLowerCase();
         const resultsArea = document.getElementById('resultsArea');
-        if (!query) { resultsArea.innerHTML = '<p style="text-align:center; color:#999; width:100%">輸入關鍵字即可自動帶出資訊...</p>'; return; }
-
-        const filtered = db.filter(d => 
-            d.vendor.toLowerCase().includes(query) || d.item.toLowerCase().includes(query) || d.note.toLowerCase().includes(query)
-        );
-
+        if (!query) { resultsArea.innerHTML = '<p style="text-align:center; color:#999">輸入關鍵字開始查詢...</p>'; return; }
+        const filtered = db.filter(d => d.vendor.toLowerCase().includes(query) || d.item.toLowerCase().includes(query) || d.note.toLowerCase().includes(query));
         resultsArea.innerHTML = filtered.map(d => `
             <div class="info-card">
                 <div class="card-header">${highlight(d.vendor, query)}</div>
                 <div class="info-grid">
-                    <div class="info-label">電話：</div><div class="info-value">${d.phone || '無'}</div>
-                    <div class="info-label">統編：</div><div class="info-value">${d.taxid || '無'}</div>
-                    <div class="info-label">主要物品：</div><div class="info-value"><strong>${highlight(d.item, query)}</strong></div>
+                    <div class="info-label">電話：</div><div>${d.phone || '無'}</div>
+                    <div class="info-label">主要物品：</div><div><strong>${highlight(d.item, query)}</strong></div>
                 </div>
                 <div class="note-box">${highlight(d.note, query) || '無備註'}</div>
-                <div class="btn-group"><button class="btn btn-edit" onclick="openEdit(${db.indexOf(d)})">編輯資料</button></div>
+                <div class="btn-group" style="text-align:right; margin-top:10px;"><button class="btn" style="background:#f1c40f; color:white; font-size:12px;" onclick="openEdit(${db.indexOf(d)})">編輯</button></div>
             </div>
         `).join('');
     }
@@ -152,27 +176,7 @@
     }
 
     function closeModal() { document.getElementById('editModal').style.display = 'none'; }
-    function forceReset() { if(confirm("確定要清除網頁記憶嗎？這會讀取你本地檔案裡的初始資料。")) { localStorage.removeItem('smartPackageDB'); location.reload(); } }
-
-    function exportUpdatedFile() {
-        // 先移除導航列以便生成的檔案乾淨，然後抓取全文
-        const scripts = document.getElementsByTagName('script');
-        let htmlContent = document.documentElement.outerHTML;
-        const latestDataJson = JSON.stringify(db, null, 4);
-        const regex = /const initialData = \[\s*[\s\S]*? \];/;
-        const replacement = `const initialData = ${latestDataJson};`;
-        const newHtml = htmlContent.replace(regex, replacement);
-
-        const blob = new Blob([newHtml], { type: 'text/html' });
-        const a = document.createElement('a');
-        a.href = URL.createObjectURL(blob);
-        a.download = 'package_manager.html';
-        a.click();
-        alert("匯出成功！請用這份新下載的檔案取代舊檔。");
-    }
-
     handleSearch();
 </script>
-
 </body>
 </html>
