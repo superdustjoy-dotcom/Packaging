@@ -17,7 +17,7 @@
         .info-card { background: white; border-left: 8px solid var(--accent); padding: 20px; border-radius: 8px; box-shadow: 0 2px 8px rgba(0,0,0,0.05); position: relative; animation: fadeIn 0.3s ease; }
         @keyframes fadeIn { from { opacity: 0; transform: translateY(10px); } to { opacity: 1; transform: translateY(0); } }
         
-        .card-header { font-size: 18px; font-weight: bold; color: var(--primary); margin-bottom: 10px; border-bottom: 1px solid #eee; padding-bottom: 5px; }
+        .card-header { font-size: 18px; font-weight: bold; color: #2c3e50; margin-bottom: 10px; border-bottom: 1px solid #eee; padding-bottom: 5px; line-height: 1.4; }
         .info-grid { display: grid; grid-template-columns: 80px 1fr; gap: 8px; font-size: 14px; }
         .info-label { color: #7f8c8d; font-weight: bold; }
         .info-value { color: #2c3e50; }
@@ -40,9 +40,9 @@
 <div class="container">
     <div class="search-section">
         <div class="search-title">📦 包裝物料廠商智慧查詢系統</div>
-        <input type="text" id="mainSearch" class="search-bar" placeholder="輸入關鍵字（如：A280、地球、900M）..." oninput="handleSearch()">
+        <input type="text" id="mainSearch" class="search-bar" placeholder="打入物品編號 (如: A280) 或廠商名稱..." oninput="handleSearch()">
         <br>
-        <button class="btn-add-global" onclick="openEdit()">+ 新增資料</button>
+        <button class="btn-add-global" onclick="openEdit()">+ 新增單筆物料</button>
     </div>
 
     <div id="resultCount" style="margin-bottom: 10px; color: #666; font-size: 14px;"></div>
@@ -55,10 +55,10 @@
         <input type="hidden" id="editIndex">
         <div class="form-group"><label>廠商名稱</label><input type="text" id="f_vendor"></div>
         <div class="form-group"><label>電話</label><input type="text" id="f_phone"></div>
-        <div class="form-group"><label>物品名稱</label><input type="text" id="f_item"></div>
+        <div class="form-group"><label>物品名稱 (含編號)</label><input type="text" id="f_item"></div>
         <div class="form-group"><label>統編</label><input type="text" id="f_taxid"></div>
         <div class="form-group"><label>類別編號</label><input type="text" id="f_cat"></div>
-        <div class="form-group"><label>備註詳情</label><textarea id="f_note" rows="5"></textarea></div>
+        <div class="form-group"><label>備註詳情</label><textarea id="f_note" rows="4"></textarea></div>
         <div style="text-align: right; margin-top: 20px;">
             <button class="btn" onclick="closeModal()">取消</button>
             <button class="btn btn-edit" onclick="saveData()" style="padding: 8px 20px">確認儲存</button>
@@ -67,9 +67,19 @@
 </div>
 
 <script>
+    // 依據要求，將特定料件獨立為「物品 (item)」
     const initialData = [
-        {vendor:"地球綜合", phone:"04-25667552", item:"OPP透明膠帶、氣泡布、牛皮貼紙", taxid:"07147916", cat:"", note:"[MISC-A280-00]OPP機用膠帶(48*900M)；[MISC-A280-00]OPP膠帶(48*90Y)"},
-        {vendor:"力維", phone:"04-22984101", item:"(LINX5900)油墨、添加劑", taxid:"22478490", cat:"", note:"墨水1130 添加劑1575 1530(800) 清(1300)；[MISC-A075-00]噴墨機(5900)年度保養；[MISC-A29E-00]5900噴墨機添加劑"},
+        /* 力維 - 獨立物料 */
+        {vendor:"力維", phone:"04-22984101", item:"[MISC-A075-00] 噴墨機(5900)年度保養", taxid:"22478490", cat:"MISC-A075-00", note:""},
+        {vendor:"力維", phone:"04-22984101", item:"[MISC-A29E-00] 5900噴墨機添加劑", taxid:"22478490", cat:"MISC-A29E-00", note:""},
+        {vendor:"力維", phone:"04-22984101", item:"(LINX5900)油墨、添加劑", taxid:"22478490", cat:"", note:"墨水1130 添加劑1575 1530(800) 清(1300)"},
+        
+        /* 地球綜合 - 獨立物料 */
+        {vendor:"地球綜合", phone:"04-25667552", item:"[MISC-A280-00] OPP機用膠帶(48*900M)", taxid:"07147916", cat:"MISC-A280-00", note:""},
+        {vendor:"地球綜合", phone:"04-25667552", item:"[MISC-A280-00] OPP膠帶(48*90Y)", taxid:"07147916", cat:"MISC-A280-00", note:""},
+        {vendor:"地球綜合", phone:"04-25667552", item:"OPP透明膠帶、氣泡布、牛皮貼紙", taxid:"07147916", cat:"", note:""},
+
+        /* 其他原始資料 */
         {vendor:"永嘉盛", phone:"23127982", item:"MISC-A280-00,MISC-A285-00(氣泡布)", taxid:"16066029", cat:"MISC-A285-00", note:""},
         {vendor:"永嘉盛", phone:"23127982", item:"OPP透明膠帶48mm、氣泡布、牛皮貼紙", taxid:"16066029", cat:"MISC-A280-00", note:""},
         {vendor:"馬肯依瑪士", phone:"", item:"(70)油墨MB247-4;添加劑A188-4、溶劑5100-4", taxid:"89283852", cat:"", note:"A188-4 1340, 5100 420"},
@@ -106,7 +116,7 @@
         const countArea = document.getElementById('resultCount');
         
         if (!query) {
-            resultsArea.innerHTML = '<p style="text-align:center; color:#999; width:100%">請輸入關鍵字（如：A280、地球、900M）...</p>';
+            resultsArea.innerHTML = '<p style="text-align:center; color:#999; width:100%">請輸入關鍵字（如：A075、900M）...</p>';
             countArea.innerText = "";
             return;
         }
