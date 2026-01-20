@@ -22,7 +22,7 @@
         .card-header { font-size: 18px; font-weight: bold; color: var(--primary); margin-bottom: 10px; border-bottom: 1px solid #eee; padding-bottom: 5px; }
         .info-grid { display: grid; grid-template-columns: 80px 1fr; gap: 8px; font-size: 14px; }
         .info-label { color: #7f8c8d; font-weight: bold; }
-        .info-value { color: #2c3e50; }
+        .info-value { color: #2c3e50; word-break: break-all; }
         .info-tag { background: #e8f6f3; color: #27ae60; padding: 2px 6px; border-radius: 4px; font-size: 12px; }
 
         .btn-group { margin-top: 15px; text-align: right; }
@@ -31,8 +31,8 @@
         .btn-add-global { background: var(--primary); color: white; padding: 10px 20px; border-radius: 25px; border: none; cursor: pointer; margin-top: 10px; }
 
         /* 彈窗 */
-        .modal { display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.6); z-index: 1000; }
-        .modal-content { background: white; width: 450px; margin: 50px auto; padding: 25px; border-radius: 10px; }
+        .modal { display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.6); z-index: 1000; overflow-y: auto; }
+        .modal-content { background: white; width: 450px; margin: 30px auto; padding: 25px; border-radius: 10px; }
         .form-group { margin-bottom: 12px; }
         .form-group label { display: block; margin-bottom: 4px; font-weight: bold; font-size: 13px; }
         .form-group input, .form-group textarea { width: 100%; padding: 8px; box-sizing: border-box; border: 1px solid #ddd; border-radius: 4px; }
@@ -43,15 +43,14 @@
 <div class="container">
     <div class="search-section">
         <div class="search-title">📦 包裝物料資訊智慧代出系統</div>
-        <input type="text" id="mainSearch" class="search-bar" placeholder="在此輸入物品關鍵字、廠商、統編或編號..." oninput="handleSearch()">
+        <input type="text" id="mainSearch" class="search-bar" placeholder="輸入物品、廠商、統編或編號 (支援括號搜尋)..." oninput="handleSearch()">
         <br>
         <button class="btn-add-global" onclick="openEdit()">+ 新增全新物料資料</button>
     </div>
 
     <div id="resultCount" style="margin-bottom: 10px; color: #666; font-size: 14px;"></div>
     
-    <div id="resultsArea" class="result-info">
-        </div>
+    <div id="resultsArea" class="result-info"></div>
 </div>
 
 <div id="editModal" class="modal">
@@ -63,7 +62,7 @@
         <div class="form-group"><label>物品名稱</label><input type="text" id="f_item"></div>
         <div class="form-group"><label>統編</label><input type="text" id="f_taxid"></div>
         <div class="form-group"><label>類別編號</label><input type="text" id="f_cat"></div>
-        <div class="form-group"><label>備註資訊</label><textarea id="f_note" rows="2"></textarea></div>
+        <div class="form-group"><label>備註資訊</label><textarea id="f_note" rows="3"></textarea></div>
         <div style="text-align: right; margin-top: 20px;">
             <button class="btn" onclick="closeModal()">取消</button>
             <button class="btn btn-edit" onclick="saveData()" style="padding: 8px 20px">確認儲存</button>
@@ -73,7 +72,7 @@
 </div>
 
 <script>
-    // 預載原始資料 (確實匯入您提供的內容)
+    // 預載原始資料
     const initialData = [
         {vendor:"永嘉盛", phone:"23127982", item:"MISC-A280-00,MISC-A285-00(氣泡布)", taxid:"16066029", cat:"MISC-A285-00", note:""},
         {vendor:"永嘉盛", phone:"23127982", item:"OPP透明膠帶48mm、氣泡布、牛皮貼紙", taxid:"16066029", cat:"MISC-A280-00", note:""},
@@ -93,8 +92,7 @@
         {vendor:"本源興", phone:"0972293065", item:"收縮膜", taxid:"", cat:"", note:""},
         {vendor:"皇將", phone:"", item:"貼標機", taxid:"80234971", cat:"", note:""},
         {vendor:"佑捷", phone:"", item:"擦拭紙", taxid:"97878835", cat:"MISC-A290-00", note:""},
-        {vendor:"力維", phone:"04-22984101", item:"(LINX5900)油墨、添加劑", taxid:"22478490", cat:"", note:"料件編號
-MISC-A075-00 品名 噴墨機(5900)年度保養  料件編號  MISC-A29E-00 品名 5900噴墨機添加劑墨水1130 添加劑1575 1530(800) 清(1300)"},
+        {vendor:"力維", phone:"04-22984101", item:"(LINX5900)油墨、添加劑", taxid:"22478490", cat:"", note:"料件編號 MISC-A075-00 品名 噴墨機(5900)年度保養 料件編號 MISC-A29E-00 品名 5900噴墨機添加劑墨水1130 添加劑1575 1530(800) 清(1300)"},
         {vendor:"晁鴻", phone:"04-8392488", item:"耗材相關", taxid:"53820647", cat:"MISC-A29E-00", note:""},
         {vendor:"大堡", phone:"", item:"三聯單", taxid:"14053225", cat:"MISC-A038-01", note:""},
         {vendor:"新台", phone:"", item:"PE桶", taxid:"04348947", cat:"", note:""},
@@ -108,8 +106,13 @@ MISC-A075-00 品名 噴墨機(5900)年度保養  料件編號  MISC-A29E-00 品�
 
     let db = JSON.parse(localStorage.getItem('smartPackageDB')) || initialData;
 
+    // 關鍵修正：跳脫 Regex 特殊字元的功能
+    function escapeRegExp(string) {
+        return string.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+    }
+
     function handleSearch() {
-        const query = document.getElementById('mainSearch').value.toLowerCase();
+        const query = document.getElementById('mainSearch').value.trim().toLowerCase();
         const resultsArea = document.getElementById('resultsArea');
         const countArea = document.getElementById('resultCount');
         
@@ -119,12 +122,14 @@ MISC-A075-00 品名 噴墨機(5900)年度保養  料件編號  MISC-A29E-00 品�
             return;
         }
 
-        const filtered = db.filter(d => 
-            d.item.toLowerCase().includes(query) || 
-            d.vendor.toLowerCase().includes(query) || 
-            d.taxid.includes(query) ||
-            d.cat.toLowerCase().includes(query)
-        );
+        // 搜尋邏輯，保留原始 Index 方便編輯
+        const filtered = db.map((item, index) => ({...item, originalIndex: index}))
+                          .filter(d => 
+                                d.item.toLowerCase().includes(query) || 
+                                d.vendor.toLowerCase().includes(query) || 
+                                d.taxid.includes(query) ||
+                                d.cat.toLowerCase().includes(query)
+                          );
 
         countArea.innerText = `找到 ${filtered.length} 筆相關資料：`;
         resultsArea.innerHTML = filtered.map(d => `
@@ -135,10 +140,10 @@ MISC-A075-00 品名 噴墨機(5900)年度保養  料件編號  MISC-A29E-00 品�
                     <div class="info-label">電話:</div><div class="info-value">${d.phone || '無'}</div>
                     <div class="info-label">統一編號:</div><div class="info-value">${highlight(d.taxid, query)}</div>
                     <div class="info-label">類別編碼:</div><div class="info-value"><span class="info-tag">${highlight(d.cat, query) || '未分類'}</span></div>
-                    <div class="info-label">備註:</div><div class="info-value" style="color:#e67e22">${d.note || '-'}</div>
+                    <div class="info-label">備註:</div><div class="info-value" style="color:#e67e22; white-space: pre-line;">${d.note || '-'}</div>
                 </div>
                 <div class="btn-group">
-                    <button class="btn btn-edit" onclick="openEdit(${db.indexOf(d)})">編輯此資訊</button>
+                    <button class="btn btn-edit" onclick="openEdit(${d.originalIndex})">編輯此資訊</button>
                 </div>
             </div>
         `).join('');
@@ -146,60 +151,13 @@ MISC-A075-00 品名 噴墨機(5900)年度保養  料件編號  MISC-A29E-00 品�
 
     function highlight(text, query) {
         if (!query) return text;
-        const re = new RegExp(`(${query})`, "gi");
+        // 修正：使用跳脫後的字串建立正則
+        const escapedQuery = escapeRegExp(query);
+        const re = new RegExp(`(${escapedQuery})`, "gi");
         return text.replace(re, '<mark style="background:#ffeb3b; padding:0 2px">$1</mark>');
     }
 
     function openEdit(index = null) {
         const modal = document.getElementById('editModal');
-        document.getElementById('editIndex').value = index;
-        document.getElementById('modalTitle').innerText = index !== null ? '編輯資訊' : '新增資訊';
-        
-        // 更新下拉選單(廠商建議)
-        const vendorList = document.getElementById('vendorList');
-        const uniqueVendors = [...new Set(db.map(d => d.vendor))];
-        vendorList.innerHTML = uniqueVendors.map(v => `<option value="${v}">`).join('');
-
-        if (index !== null) {
-            const d = db[index];
-            document.getElementById('f_vendor').value = d.vendor;
-            document.getElementById('f_phone').value = d.phone;
-            document.getElementById('f_item').value = d.item;
-            document.getElementById('f_taxid').value = d.taxid;
-            document.getElementById('f_cat').value = d.cat;
-            document.getElementById('f_note').value = d.note;
-        } else {
-            document.querySelectorAll('.modal-content input, textarea').forEach(i => i.value = '');
-        }
-        modal.style.display = 'block';
-    }
-
-    // 儲存資料
-    function saveData() {
-        const index = document.getElementById('editIndex').value;
-        const newData = {
-            vendor: document.getElementById('f_vendor').value,
-            phone: document.getElementById('f_phone').value,
-            item: document.getElementById('f_item').value,
-            taxid: document.getElementById('f_taxid').value,
-            cat: document.getElementById('f_cat').value,
-            note: document.getElementById('f_note').value
-        };
-
-        if (index !== "") db[index] = newData;
-        else db.push(newData);
-
-        localStorage.setItem('smartPackageDB', JSON.stringify(db));
-        closeModal();
-        handleSearch();
-    }
-
-    function closeModal() { document.getElementById('editModal').style.display = 'none'; }
-
-    // 初始化頁面
-    handleSearch();
-</script>
-
-</body>
-
-</html>
+        // 確保 index 為字串存入 hidden input
+        document.getElementById('editIndex').value = (index !== null) ? index : "";
