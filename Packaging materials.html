@@ -4,19 +4,27 @@
     <meta charset="UTF-8">
     <title>包裝物料廠商智慧系統 - 青棠終極版</title>
     <style>
-        :root { --primary: #34495e; --accent: #27ae60; --bg: #f0f2f5; }
-        body { font-family: "PingFang TC", "Microsoft JhengHei", sans-serif; background: var(--bg); margin: 0; padding: 20px; color: #333; }
+        :root { --primary: #34495e; --accent: #27ae60; --bg: #f0f2f5; --blue: #3498db; --red: #e74c3c; }
+        body { font-family: "PingFang TC", "Microsoft JhengHei", sans-serif; background: var(--bg); margin: 0; padding: 20px; padding-top: 80px; color: #333; }
+        
+        /* 固定在最上方的工具列 */
+        .top-nav { 
+            position: fixed; top: 0; left: 0; width: 100%; 
+            background: #fff; border-bottom: 2px solid #ddd; 
+            padding: 10px 20px; display: flex; justify-content: space-between; 
+            align-items: center; z-index: 2000; box-sizing: border-box;
+        }
+
         .container { max-width: 1000px; margin: 0 auto; }
         
-        /* 頂部工具列 */
-        .top-tools { display: flex; justify-content: space-between; margin-bottom: 15px; }
-        .btn { padding: 8px 16px; border-radius: 6px; cursor: pointer; border: 1px solid #ddd; background: #fff; font-size: 13px; font-weight: bold; }
-        .btn-export { background: #3498db; color: white; border: none; }
-        .btn-reset { background: #e74c3c; color: white; border: none; }
+        .btn { padding: 10px 20px; border-radius: 6px; cursor: pointer; border: none; font-size: 14px; font-weight: bold; transition: 0.3s; }
+        .btn-export { background: var(--blue); color: white; }
+        .btn-export:hover { background: #2980b9; box-shadow: 0 4px 10px rgba(52, 152, 219, 0.3); }
+        .btn-reset { background: #eee; color: #666; }
 
         .search-section { background: white; padding: 30px; border-radius: 15px; box-shadow: 0 4px 15px rgba(0,0,0,0.1); margin-bottom: 20px; text-align: center; }
-        .search-title { font-size: 24px; margin-bottom: 15px; color: var(--primary); }
-        .search-bar { width: 85%; padding: 15px 25px; font-size: 18px; border: 2px solid #ddd; border-radius: 30px; outline: none; }
+        .search-title { font-size: 24px; margin-bottom: 15px; color: var(--primary); font-weight: bold; }
+        .search-bar { width: 90%; padding: 15px 25px; font-size: 18px; border: 2px solid #ddd; border-radius: 30px; outline: none; }
         .search-bar:focus { border-color: var(--accent); }
 
         .result-info { display: grid; grid-template-columns: repeat(auto-fill, minmax(450px, 1fr)); gap: 20px; }
@@ -30,23 +38,25 @@
         .btn-group { margin-top: 15px; text-align: right; }
         .btn-edit { background: #f1c40f; color: white; border: none; }
 
-        /* 編輯視窗 */
-        .modal { display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.6); z-index: 1000; }
+        .modal { display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.6); z-index: 3000; }
         .modal-content { background: white; width: 450px; margin: 50px auto; padding: 25px; border-radius: 10px; }
         input, textarea { width: 100%; padding: 10px; margin-bottom: 15px; border: 1px solid #ddd; border-radius: 4px; box-sizing: border-box; }
     </style>
 </head>
 <body>
 
-<div class="container">
-    <div class="top-tools">
-        <button class="btn btn-reset" onclick="forceReset()">🔄 清除記憶</button>
-        <button class="btn btn-export" onclick="exportUpdatedFile()">💾 匯出最新系統檔 (.html)</button>
-    </div>
+<div class="top-nav">
+    <button class="btn btn-reset" onclick="forceReset()">🔄 清除舊記憶</button>
+    <div style="font-weight: bold; color: #7f8c8d;">青棠資料同步系統</div>
+    <button class="btn btn-export" onclick="exportUpdatedFile()">💾 匯出最新系統檔 (.html)</button>
+</div>
 
+<div class="container">
     <div class="search-section">
-        <div class="search-title">📦 包裝物料廠商智慧查詢系統</div>
-        <input type="text" id="mainSearch" class="search-bar" placeholder="打入「力維」或「地球」或料件編號..." oninput="handleSearch()">
+        <div class="search-title">📦 包裝物料智慧查詢系統</div>
+        <input type="text" id="mainSearch" class="search-bar" placeholder="打入「力維」、「地球」或編號..." oninput="handleSearch()">
+        <br><br>
+        <button class="btn btn-export" style="background:var(--primary)" onclick="openEdit()">+ 新增一筆資料</button>
     </div>
 
     <div id="resultsArea" class="result-info"></div>
@@ -60,16 +70,16 @@
         <label>電話</label><input type="text" id="f_phone">
         <label>物品名稱</label><input type="text" id="f_item">
         <label>統編</label><input type="text" id="f_taxid">
-        <label>備註詳情 (料件編號/細節)</label><textarea id="f_note" rows="8"></textarea>
+        <label>備註詳情</label><textarea id="f_note" rows="8"></textarea>
         <div style="text-align:right;">
             <button class="btn" onclick="closeModal()">取消</button>
-            <button class="btn btn-edit" onclick="saveData()">儲存更改</button>
+            <button class="btn btn-export" onclick="saveData()">儲存更改</button>
         </div>
     </div>
 </div>
 
 <script id="data-script">
-    // 【主資料區】匯出時會自動更新這裡的內容
+    // 【主資料區】
     const initialData = [
         {
             vendor:"力維", phone:"04-22984101", taxid:"22478490", item:"(LINX5900)油墨、添加劑", 
@@ -79,8 +89,7 @@
             vendor:"地球綜合", phone:"04-25667552", taxid:"07147916", item:"OPP透明膠帶、氣泡布、牛皮貼紙", 
             note:"料件編號：MISC-A280-00\n品名：OPP機用膠帶(48*900M)\n\n料件編號：MISC-A280-00\n品名：OPP膠帶(48*90Y)"
         },
-        {vendor:"永嘉盛", phone:"23127982", item:"MISC-A280-00,MISC-A285-00(氣泡布)", taxid:"16066029", note:""}
-        // ... (其他資料)
+        {vendor:"永嘉盛", phone:"23127982", item:"氣泡布相關", taxid:"16066029", note:""}
     ];
 
     let db = JSON.parse(localStorage.getItem('smartPackageDB')) || initialData;
@@ -88,7 +97,7 @@
     function handleSearch() {
         const query = document.getElementById('mainSearch').value.toLowerCase();
         const resultsArea = document.getElementById('resultsArea');
-        if (!query) { resultsArea.innerHTML = '<p style="text-align:center; color:#999; width:100%">請輸入關鍵字開始查詢...</p>'; return; }
+        if (!query) { resultsArea.innerHTML = '<p style="text-align:center; color:#999; width:100%">輸入關鍵字即可自動帶出資訊...</p>'; return; }
 
         const filtered = db.filter(d => 
             d.vendor.toLowerCase().includes(query) || d.item.toLowerCase().includes(query) || d.note.toLowerCase().includes(query)
@@ -102,8 +111,8 @@
                     <div class="info-label">統編：</div><div class="info-value">${d.taxid || '無'}</div>
                     <div class="info-label">主要物品：</div><div class="info-value"><strong>${highlight(d.item, query)}</strong></div>
                 </div>
-                <div class="note-box">${highlight(d.note, query) || '無詳細備註'}</div>
-                <div class="btn-group"><button class="btn btn-edit" onclick="openEdit(${db.indexOf(d)})">編輯</button></div>
+                <div class="note-box">${highlight(d.note, query) || '無備註'}</div>
+                <div class="btn-group"><button class="btn btn-edit" onclick="openEdit(${db.indexOf(d)})">編輯資料</button></div>
             </div>
         `).join('');
     }
@@ -114,7 +123,6 @@
         return text.replace(re, '<mark style="background:#ffeb3b; padding:0 2px">$1</mark>');
     }
 
-    // --- 儲存與彈窗邏輯 ---
     function openEdit(index = null) {
         document.getElementById('editIndex').value = index;
         if (index !== null) {
@@ -133,54 +141,34 @@
     function saveData() {
         const index = document.getElementById('editIndex').value;
         const newData = {
-            vendor: document.getElementById('f_vendor').value,
-            phone: document.getElementById('f_phone').value,
-            item: document.getElementById('f_item').value,
-            taxid: document.getElementById('f_taxid').value,
+            vendor: document.getElementById('f_vendor').value, phone: document.getElementById('f_phone').value,
+            item: document.getElementById('f_item').value, taxid: document.getElementById('f_taxid').value,
             note: document.getElementById('f_note').value
         };
-        if (index !== "") db[index] = newData;
-        else db.push(newData);
+        if (index !== "") db[index] = newData; else db.push(newData);
         localStorage.setItem('smartPackageDB', JSON.stringify(db));
         closeModal();
         handleSearch();
     }
 
     function closeModal() { document.getElementById('editModal').style.display = 'none'; }
+    function forceReset() { if(confirm("確定要清除網頁記憶嗎？這會讀取你本地檔案裡的初始資料。")) { localStorage.removeItem('smartPackageDB'); location.reload(); } }
 
-    function forceReset() {
-        if(confirm("確定要清除網頁記憶並讀取代碼內的 initialData 嗎？")) {
-            localStorage.removeItem('smartPackageDB');
-            location.reload();
-        }
-    }
-
-    // --- ✨ 核心功能：匯出包含最新資料的 HTML 檔案 ✨ ---
     function exportUpdatedFile() {
-        // 取得目前的 HTML 全文
+        // 先移除導航列以便生成的檔案乾淨，然後抓取全文
+        const scripts = document.getElementsByTagName('script');
         let htmlContent = document.documentElement.outerHTML;
-        
-        // 將最新的 db 轉換為 JSON 字串
         const latestDataJson = JSON.stringify(db, null, 4);
-        
-        // 用正則表達式取代掉原始碼中的 initialData 內容
         const regex = /const initialData = \[\s*[\s\S]*? \];/;
         const replacement = `const initialData = ${latestDataJson};`;
-        
         const newHtml = htmlContent.replace(regex, replacement);
 
-        // 建立下載連結
         const blob = new Blob([newHtml], { type: 'text/html' });
-        const url = URL.createObjectURL(blob);
         const a = document.createElement('a');
-        a.href = url;
-        a.download = 'package_system_updated.html';
-        document.body.appendChild(a);
+        a.href = URL.createObjectURL(blob);
+        a.download = 'package_manager.html';
         a.click();
-        document.body.removeChild(a);
-        URL.revokeObjectURL(url);
-        
-        alert("匯出成功！請用下載的這個新檔案取代掉你原本的本地檔案，資料就會永久同步。");
+        alert("匯出成功！請用這份新下載的檔案取代舊檔。");
     }
 
     handleSearch();
