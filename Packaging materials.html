@@ -8,13 +8,11 @@
         body { font-family: "PingFang TC", "Microsoft JhengHei", sans-serif; background: var(--bg); margin: 0; padding: 20px; color: #333; }
         .container { max-width: 1000px; margin: 0 auto; }
         
-        /* 智慧搜尋區 */
         .search-section { background: white; padding: 30px; border-radius: 15px; box-shadow: 0 4px 15px rgba(0,0,0,0.1); margin-bottom: 20px; text-align: center; }
         .search-title { font-size: 24px; margin-bottom: 15px; color: var(--primary); font-weight: bold; }
         .search-bar { width: 80%; padding: 15px 25px; font-size: 18px; border: 2px solid #ddd; border-radius: 30px; outline: none; transition: 0.3s; }
         .search-bar:focus { border-color: var(--accent); box-shadow: 0 0 10px rgba(39, 174, 96, 0.2); }
 
-        /* 結果資訊卡片 */
         .result-info { display: grid; grid-template-columns: repeat(auto-fill, minmax(450px, 1fr)); gap: 20px; }
         .info-card { background: white; border-left: 8px solid var(--accent); padding: 20px; border-radius: 8px; box-shadow: 0 2px 8px rgba(0,0,0,0.05); position: relative; animation: fadeIn 0.3s ease; }
         @keyframes fadeIn { from { opacity: 0; transform: translateY(10px); } to { opacity: 1; transform: translateY(0); } }
@@ -30,7 +28,6 @@
         .btn-edit { background: #f1c40f; border: none; color: #fff; }
         .btn-add-global { background: var(--primary); color: white; padding: 10px 20px; border-radius: 25px; border: none; cursor: pointer; margin-top: 10px; }
 
-        /* 彈窗 */
         .modal { display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.6); z-index: 1000; }
         .modal-content { background: white; width: 450px; margin: 50px auto; padding: 25px; border-radius: 10px; }
         .form-group { margin-bottom: 12px; }
@@ -42,39 +39,37 @@
 
 <div class="container">
     <div class="search-section">
-        <div class="search-title">📦 包裝物料資訊智慧代出系統</div>
-        <input type="text" id="mainSearch" class="search-bar" placeholder="在此輸入物品關鍵字、廠商、統編或編號..." oninput="handleSearch()">
+        <div class="search-title">📦 包裝物料廠商智慧查詢系統</div>
+        <input type="text" id="mainSearch" class="search-bar" placeholder="輸入關鍵字（如：A280、地球、900M）..." oninput="handleSearch()">
         <br>
-        <button class="btn-add-global" onclick="openEdit()">+ 新增全新物料資料</button>
+        <button class="btn-add-global" onclick="openEdit()">+ 新增資料</button>
     </div>
 
     <div id="resultCount" style="margin-bottom: 10px; color: #666; font-size: 14px;"></div>
-    
-    <div id="resultsArea" class="result-info">
-        </div>
+    <div id="resultsArea" class="result-info"></div>
 </div>
 
 <div id="editModal" class="modal">
     <div class="modal-content">
         <h3 id="modalTitle">資料維護</h3>
         <input type="hidden" id="editIndex">
-        <div class="form-group"><label>廠商名稱</label><input type="text" id="f_vendor" list="vendorList"></div>
+        <div class="form-group"><label>廠商名稱</label><input type="text" id="f_vendor"></div>
         <div class="form-group"><label>電話</label><input type="text" id="f_phone"></div>
         <div class="form-group"><label>物品名稱</label><input type="text" id="f_item"></div>
         <div class="form-group"><label>統編</label><input type="text" id="f_taxid"></div>
         <div class="form-group"><label>類別編號</label><input type="text" id="f_cat"></div>
-        <div class="form-group"><label>備註資訊</label><textarea id="f_note" rows="2"></textarea></div>
+        <div class="form-group"><label>備註詳情</label><textarea id="f_note" rows="5"></textarea></div>
         <div style="text-align: right; margin-top: 20px;">
             <button class="btn" onclick="closeModal()">取消</button>
             <button class="btn btn-edit" onclick="saveData()" style="padding: 8px 20px">確認儲存</button>
         </div>
     </div>
-    <datalist id="vendorList"></datalist>
 </div>
 
 <script>
-    // 預載原始資料 (確實匯入您提供的內容)
     const initialData = [
+        {vendor:"地球綜合", phone:"04-25667552", item:"OPP透明膠帶、氣泡布、牛皮貼紙", taxid:"07147916", cat:"", note:"[MISC-A280-00]OPP機用膠帶(48*900M)；[MISC-A280-00]OPP膠帶(48*90Y)"},
+        {vendor:"力維", phone:"04-22984101", item:"(LINX5900)油墨、添加劑", taxid:"22478490", cat:"", note:"墨水1130 添加劑1575 1530(800) 清(1300)；[MISC-A075-00]噴墨機(5900)年度保養；[MISC-A29E-00]5900噴墨機添加劑"},
         {vendor:"永嘉盛", phone:"23127982", item:"MISC-A280-00,MISC-A285-00(氣泡布)", taxid:"16066029", cat:"MISC-A285-00", note:""},
         {vendor:"永嘉盛", phone:"23127982", item:"OPP透明膠帶48mm、氣泡布、牛皮貼紙", taxid:"16066029", cat:"MISC-A280-00", note:""},
         {vendor:"馬肯依瑪士", phone:"", item:"(70)油墨MB247-4;添加劑A188-4、溶劑5100-4", taxid:"89283852", cat:"", note:"A188-4 1340, 5100 420"},
@@ -93,11 +88,9 @@
         {vendor:"本源興", phone:"0972293065", item:"收縮膜", taxid:"", cat:"", note:""},
         {vendor:"皇將", phone:"", item:"貼標機", taxid:"80234971", cat:"", note:""},
         {vendor:"佑捷", phone:"", item:"擦拭紙", taxid:"97878835", cat:"MISC-A290-00", note:""},
-        {vendor:"力維", phone:"04-22984101", item:"(LINX5900)油墨、添加劑", taxid:"22478490", cat:"", note:"墨水1130 添加劑1575 1530(800) 清(1300)"},
         {vendor:"晁鴻", phone:"04-8392488", item:"耗材相關", taxid:"53820647", cat:"MISC-A29E-00", note:""},
         {vendor:"大堡", phone:"", item:"三聯單", taxid:"14053225", cat:"MISC-A038-01", note:""},
         {vendor:"新台", phone:"", item:"PE桶", taxid:"04348947", cat:"", note:""},
-        {vendor:"地球綜合", phone:"04-25667552", item:"OPP透明膠帶、氣泡布、牛皮貼紙", taxid:"07147916", cat:"", note:""},
         {vendor:"飛旦or京旻", phone:"", item:"印表機碳粉匣", taxid:"86243408", cat:"MISC-A034-00", note:""},
         {vendor:"晶圓", phone:"", item:"食品級乾燥劑", taxid:"86336378", cat:"MISC-A280-00", note:""},
         {vendor:"佑欣金屬", phone:"04-25255897", item:"OPP膠帶", taxid:"24375689", cat:"", note:""},
@@ -113,7 +106,7 @@
         const countArea = document.getElementById('resultCount');
         
         if (!query) {
-            resultsArea.innerHTML = '<p style="text-align:center; color:#999; width:100%">請輸入關鍵字開始查詢...</p>';
+            resultsArea.innerHTML = '<p style="text-align:center; color:#999; width:100%">請輸入關鍵字（如：A280、地球、900M）...</p>';
             countArea.innerText = "";
             return;
         }
@@ -122,7 +115,8 @@
             d.item.toLowerCase().includes(query) || 
             d.vendor.toLowerCase().includes(query) || 
             d.taxid.includes(query) ||
-            d.cat.toLowerCase().includes(query)
+            d.cat.toLowerCase().includes(query) ||
+            d.note.toLowerCase().includes(query)
         );
 
         countArea.innerText = `找到 ${filtered.length} 筆相關資料：`;
@@ -134,7 +128,7 @@
                     <div class="info-label">電話:</div><div class="info-value">${d.phone || '無'}</div>
                     <div class="info-label">統一編號:</div><div class="info-value">${highlight(d.taxid, query)}</div>
                     <div class="info-label">類別編碼:</div><div class="info-value"><span class="info-tag">${highlight(d.cat, query) || '未分類'}</span></div>
-                    <div class="info-label">備註:</div><div class="info-value" style="color:#e67e22">${d.note || '-'}</div>
+                    <div class="info-label">備註詳情:</div><div class="info-value" style="color:#e67e22; white-space: pre-wrap;">${highlight(d.note, query) || '-'}</div>
                 </div>
                 <div class="btn-group">
                     <button class="btn btn-edit" onclick="openEdit(${db.indexOf(d)})">編輯此資訊</button>
@@ -153,11 +147,6 @@
         const modal = document.getElementById('editModal');
         document.getElementById('editIndex').value = index;
         document.getElementById('modalTitle').innerText = index !== null ? '編輯資訊' : '新增資訊';
-        
-        // 更新下拉選單(廠商建議)
-        const vendorList = document.getElementById('vendorList');
-        const uniqueVendors = [...new Set(db.map(d => d.vendor))];
-        vendorList.innerHTML = uniqueVendors.map(v => `<option value="${v}">`).join('');
 
         if (index !== null) {
             const d = db[index];
@@ -173,7 +162,6 @@
         modal.style.display = 'block';
     }
 
-    // 儲存資料
     function saveData() {
         const index = document.getElementById('editIndex').value;
         const newData = {
@@ -194,8 +182,6 @@
     }
 
     function closeModal() { document.getElementById('editModal').style.display = 'none'; }
-
-    // 初始化頁面
     handleSearch();
 </script>
 
