@@ -52,12 +52,12 @@
         <input type="text" id="mainSearch" class="search-bar" placeholder="在此輸入物品關鍵字、廠商、統編或編號..." oninput="handleSearch()">
         <div class="btn-group-top">
             <button class="btn-add-global" onclick="openEdit()">+ 新增全新物料資料</button>
-            <button class="btn-sync-global" onclick="packageAndDownload()" title="將目前的資料打包成新的HTML檔案下載，實現本機備份同步">💾 一鍵打包同步本機</button>
+            <button class="btn-sync-global" onclick="packageAndDownload()" title="將目前的資料打包成新的HTML檔案下載">💾 一鍵打包同步本機</button>
         </div>
+        <div id="versionTag" style="font-size: 11px; color: #bbb; margin-top: 10px;"></div>
     </div>
 
     <div id="resultCount" style="margin-bottom: 10px; color: #666; font-size: 14px;"></div>
-    
     <div id="resultsArea" class="result-info"></div>
 </div>
 
@@ -80,40 +80,60 @@
 </div>
 
 <script>
-    // 預載資料 - 已根據需求更新力維與地球綜合之資訊
-    const initialData = [
-        {vendor:"永嘉盛", phone:"23127982", item:"MISC-A280-00,MISC-A285-00(氣泡布)", taxid:"16066029", cat:"MISC-A285-00", note:""},
-        {vendor:"永嘉盛", phone:"23127982", item:"OPP透明膠帶48mm、氣泡布、牛皮貼紙", taxid:"16066029", cat:"MISC-A280-00", note:""},
-        {vendor:"馬肯依瑪士", phone:"", item:"(70)油墨MB247-4;添加劑A188-4、溶劑5100-4", taxid:"89283852", cat:"", note:"A188-4 1340, 5100 420"},
-        {vendor:"馬肯依瑪士", phone:"", item:"(90)油墨MB-247-4;添加劑A188-4", taxid:"89283852", cat:"MISC-A075-00", note:"保養合約"},
-        {vendor:"馬肯依瑪士", phone:"", item:"X40、SD-5色帶3550", taxid:"89283852", cat:"MISC-A038-00", note:""},
-        {vendor:"信越化學工業株式會社", phone:"", item:"切刀用矽膠", taxid:"", cat:"", note:""},
-        {vendor:"信越化學工業株式會社", phone:"", item:"Shin-Etsu(KS-64 100g)", taxid:"", cat:"", note:""},
-        {vendor:"凱士士", phone:"", item:"鎖式紮帶CV-200/A本色", taxid:"72108944", cat:"MISC-A284-00", note:""},
-        {vendor:"台灣希悅爾", phone:"03-3242988", item:"鐵氟龍膠帶(0.13mm*50mm*10m)", taxid:"23060459", cat:"MISC-A290-00", note:""},
-        {vendor:"荗翔", phone:"", item:"塑膠袋(0.07*550*830)", taxid:"16414738", cat:"MISC-A286-00", note:""},
-        {vendor:"桂和", phone:"25331127-8", item:"pp盒", taxid:"55988058", cat:"", note:""},
-        {vendor:"德昱成", phone:"02-22999176", item:"碳帶、印字機", taxid:"27637291", cat:"MISC-A280-00", note:""},
-        {vendor:"松優", phone:"25273865", item:"機器維修", taxid:"86220432", cat:"MISC-A030-00", note:""},
-        {vendor:"東信", phone:"", item:"乾燥劑", taxid:"56667701", cat:"", note:""},
-        {vendor:"立捷立", phone:"0933580178", item:"收縮膜", taxid:"84419129", cat:"", note:""},
-        {vendor:"本源興", phone:"0972293065", item:"收縮膜", taxid:"", cat:"", note:""},
-        {vendor:"皇將", phone:"", item:"貼標機", taxid:"80234971", cat:"", note:""},
-        {vendor:"佑捷", phone:"", item:"擦拭紙", taxid:"97878835", cat:"MISC-A290-00", note:""},
-        {vendor:"力維", phone:"04-22984101", item:"(LINX5900)油墨、添加劑、年度保養", taxid:"22478490", cat:"MISC-A075-00", note:"料件編號：MISC-A075-00 (噴墨機5900年度保養)\n料件編號：MISC-A29E-00 (5900噴墨機添加劑/以瓶計 10瓶一箱)\n細項：墨水1130, 添加劑1575, 1530(800), 清(1300)"},
-        {vendor:"晁鴻", phone:"04-8392488", item:"耗材相關", taxid:"53820647", cat:"MISC-A29E-00", note:""},
-        {vendor:"大堡", phone:"", item:"三聯單", taxid:"14053225", cat:"MISC-A038-01", note:""},
-        {vendor:"新台", phone:"", item:"PE桶", taxid:"04348947", cat:"", note:""},
-        {vendor:"地球綜合", phone:"04-25667552", item:"OPP機用膠帶、OPP膠帶、氣泡布、牛皮貼紙", taxid:"07147916", cat:"MISC-A280-00", note:"料件編號：MISC-A280-00 (OPP機用膠帶 48*900M 一箱10捲)\n料件編號：MISC-A280-00 (OPP膠帶 48*90Y 以PSC捲計 一箱120捲)"},
-        {vendor:"飛旦or京旻", phone:"", item:"印表機碳粉匣", taxid:"86243408", cat:"MISC-A034-00", note:""},
-        {vendor:"晶圓", phone:"", item:"食品級乾燥劑", taxid:"86336378", cat:"MISC-A280-00", note:""},
-        {vendor:"佑欣金屬", phone:"04-25255897", item:"OPP膠帶", taxid:"24375689", cat:"", note:""},
-        {vendor:"世源科技", phone:"06-2425580", item:"開盒機吸盤XP-F40N", taxid:"86575095", cat:"MISC-A070-00", note:""},
-        {vendor:"震大印刷", phone:"", item:"印刷品", taxid:"5637944", cat:"", note:""}
-    ];
+    // 【核心更新】加入 version 紀錄最後更新時間
+    const initialConfig = {
+        version: 1705820000000, // 初始版本時間戳
+        data: [
+            {vendor:"永嘉盛", phone:"23127982", item:"MISC-A280-00,MISC-A285-00(氣泡布)", taxid:"16066029", cat:"MISC-A285-00", note:""},
+            {vendor:"永嘉盛", phone:"23127982", item:"OPP透明膠帶48mm、氣泡布、牛皮貼紙", taxid:"16066029", cat:"MISC-A280-00", note:""},
+            {vendor:"馬肯依瑪士", phone:"", item:"(70)油墨MB247-4;添加劑A188-4、溶劑5100-4", taxid:"89283852", cat:"", note:"A188-4 1340, 5100 420"},
+            {vendor:"馬肯依瑪士", phone:"", item:"(90)油墨MB-247-4;添加劑A188-4", taxid:"89283852", cat:"MISC-A075-00", note:"保養合約"},
+            {vendor:"馬肯依瑪士", phone:"", item:"X40、SD-5色帶3550", taxid:"89283852", cat:"MISC-A038-00", note:""},
+            {vendor:"信越化學工業株式會社", phone:"", item:"切刀用矽膠", taxid:"", cat:"", note:""},
+            {vendor:"信越化學工業株式會社", phone:"", item:"Shin-Etsu(KS-64 100g)", taxid:"", cat:"", note:""},
+            {vendor:"凱士士", phone:"", item:"鎖式紮帶CV-200/A本色", taxid:"72108944", cat:"MISC-A284-00", note:""},
+            {vendor:"台灣希悅爾", phone:"03-3242988", item:"鐵氟龍膠帶(0.13mm*50mm*10m)", taxid:"23060459", cat:"MISC-A290-00", note:""},
+            {vendor:"荗翔", phone:"", item:"塑膠袋(0.07*550*830)", taxid:"16414738", cat:"MISC-A286-00", note:""},
+            {vendor:"桂和", phone:"25331127-8", item:"pp盒", taxid:"55988058", cat:"", note:""},
+            {vendor:"德昱成", phone:"02-22999176", item:"碳帶、印字機", taxid:"27637291", cat:"MISC-A280-00", note:""},
+            {vendor:"松優", phone:"25273865", item:"機器維修", taxid:"86220432", cat:"MISC-A030-00", note:""},
+            {vendor:"東信", phone:"", item:"乾燥劑", taxid:"56667701", cat:"", note:""},
+            {vendor:"立捷立", phone:"0933580178", item:"收縮膜", taxid:"84419129", cat:"", note:""},
+            {vendor:"本源興", phone:"0972293065", item:"收縮膜", taxid:"", cat:"", note:""},
+            {vendor:"皇將", phone:"", item:"貼標機", taxid:"80234971", cat:"", note:""},
+            {vendor:"佑捷", phone:"", item:"擦拭紙", taxid:"97878835", cat:"MISC-A290-00", note:""},
+            {vendor:"力維", phone:"04-22984101", item:"(LINX5900)油墨、添加劑、年度保養", taxid:"22478490", cat:"MISC-A075-00", note:"料件編號：MISC-A075-00 (噴墨機5900年度保養)\n料件編號：MISC-A29E-00 (5900噴墨機添加劑/以瓶計 10瓶一箱)\n細項：墨水1130, 添加劑1575, 1530(800), 清(1300)"},
+            {vendor:"晁鴻", phone:"04-8392488", item:"耗材相關", taxid:"53820647", cat:"MISC-A29E-00", note:""},
+            {vendor:"大堡", phone:"", item:"三聯單", taxid:"14053225", cat:"MISC-A038-01", note:""},
+            {vendor:"新台", phone:"", item:"PE桶", taxid:"04348947", cat:"", note:""},
+            {vendor:"地球綜合", phone:"04-25667552", item:"OPP機用膠帶、OPP膠帶、氣泡布、牛皮貼紙", taxid:"07147916", cat:"MISC-A280-00", note:"料件編號：MISC-A280-00 (OPP機用膠帶 48*900M 一箱10捲)\n料件編號：MISC-A280-00 (OPP膠帶 48*90Y 以PSC捲計 一箱120捲)"},
+            {vendor:"飛旦or京旻", phone:"", item:"印表機碳粉匣", taxid:"86243408", cat:"MISC-A034-00", note:""},
+            {vendor:"晶圓", phone:"", item:"食品級乾燥劑", taxid:"86336378", cat:"MISC-A280-00", note:""},
+            {vendor:"佑欣金屬", phone:"04-25255897", item:"OPP膠帶", taxid:"24375689", cat:"", note:""},
+            {vendor:"世源科技", phone:"06-2425580", item:"開盒機吸盤XP-F40N", taxid:"86575095", cat:"MISC-A070-00", note:""},
+            {vendor:"震大印刷", phone:"", item:"印刷品", taxid:"5637944", cat:"", note:""}
+        ]
+    };
 
-    // 初始化資料庫，優先從本地存儲讀取
-    let db = JSON.parse(localStorage.getItem('smartPackageDB')) || initialData;
+    let db;
+    
+    // 【核心邏輯】初始化：判斷檔案與暫存誰比較新
+    function initDB() {
+        const localConfig = JSON.parse(localStorage.getItem('smartPackageConfig'));
+        
+        if (localConfig && localConfig.version > initialConfig.version) {
+            // 如果瀏覽器記憶體的時間比較新，用記憶體的
+            db = localConfig.data;
+            document.getElementById('versionTag').innerText = "當前讀取來源：瀏覽器暫存 (最後更新：" + new Date(localConfig.version).toLocaleString() + ")";
+        } else {
+            // 如果檔案本身的時間比較新（剛下載回來），或沒有暫存，用檔案的
+            db = initialConfig.data;
+            localStorage.setItem('smartPackageConfig', JSON.stringify({version: initialConfig.version, data: db}));
+            document.getElementById('versionTag').innerText = "當前讀取來源：實體檔案 (最後更新：" + new Date(initialConfig.version).toLocaleString() + ")";
+        }
+    }
+
+    initDB();
 
     function handleSearch() {
         const query = document.getElementById('mainSearch').value.toLowerCase();
@@ -127,16 +147,15 @@
         }
 
         const filtered = db.filter(d => 
-            d.item.toLowerCase().includes(query) || 
-            d.vendor.toLowerCase().includes(query) || 
-            d.taxid.includes(query) ||
+            (d.item || "").toLowerCase().includes(query) || 
+            (d.vendor || "").toLowerCase().includes(query) || 
+            (d.taxid || "").includes(query) ||
             (d.cat && d.cat.toLowerCase().includes(query)) ||
             (d.note && d.note.toLowerCase().includes(query))
         );
 
         countArea.innerText = `找到 ${filtered.length} 筆相關資料：`;
         resultsArea.innerHTML = filtered.map(d => {
-            // 找出該筆資料在原始 db 中的索引
             const originalIndex = db.indexOf(d);
             return `
                 <div class="info-card">
@@ -199,44 +218,49 @@
         if (index !== "") db[index] = newData;
         else db.push(newData);
 
-        localStorage.setItem('smartPackageDB', JSON.stringify(db));
+        // 更新暫存時也更新版本號
+        const newVersion = Date.now();
+        localStorage.setItem('smartPackageConfig', JSON.stringify({version: newVersion, data: db}));
+        
         closeModal();
         handleSearch();
-        alert("資料已暫存於瀏覽器！若要永久保存到檔案，請記得點擊『一鍵打包同步本機』。");
+        alert("資料已更新！\n提醒：請記得點擊「一鍵打包同步本機」來產生永久保存的檔案。");
     }
 
     function closeModal() { document.getElementById('editModal').style.display = 'none'; }
 
-    // 【新增功能】一鍵打包同步本機
+    // 【同步更新】打包時自動打上當前時間戳
     function packageAndDownload() {
-        const dataStr = JSON.stringify(db, null, 4);
+        const newVersion = Date.now();
+        const configToSave = {
+            version: newVersion,
+            data: db
+        };
+        const configStr = JSON.stringify(configToSave, null, 4);
         const currentHtml = document.documentElement.outerHTML;
         
-        // 使用正則表達式替換掉原始代碼中的 initialData 內容
+        // 替換檔案內的 initialConfig
         const updatedHtml = currentHtml.replace(
-            /const initialData = \[[\s\S]*?\];/, 
-            `const initialData = ${dataStr};`
+            /const initialConfig = \{[\s\S]*?\};/, 
+            `const initialConfig = ${configStr};`
         );
 
         const blob = new Blob([updatedHtml], {type: 'text/html'});
         const url = URL.createObjectURL(blob);
         const a = document.createElement('a');
-        
         const now = new Date();
-        const dateStr = `${now.getFullYear()}${String(now.getMonth()+1).padStart(2,'0')}${String(now.getDate()).padStart(2,'0')}`;
+        const dateStr = `${now.getFullYear()}${String(now.getMonth()+1).padStart(2,'0')}${String(now.getDate()).padStart(2,'0')}_${String(now.getHours()).padStart(2,'0')}${String(now.getMinutes()).padStart(2,'0')}`;
         
         a.href = url;
-        a.download = `包裝物料系統_同步版_${dateStr}.html`;
+        a.download = `包裝物料系統_最新版_${dateStr}.html`;
         document.body.appendChild(a);
         a.click();
         document.body.removeChild(a);
         URL.revokeObjectURL(url);
     }
 
-    // 初始化頁面
     handleSearch();
 </script>
 
 </body>
 </html>
-
