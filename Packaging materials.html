@@ -178,6 +178,7 @@
     }
 
     function packageAndDownload() {
+        // 使用 JSON.stringify 的排版參數，確保下載後的檔案是整齊的
         const dataStr = JSON.stringify(db, null, 8);
         let html = document.documentElement.outerHTML;
         const startMarker = "// --- 【資料區】 ---";
